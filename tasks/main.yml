@@ -1,0 +1,72 @@
+---
+- name: Install vlan packages (apt)
+  apt:
+    name: vlan
+    state: present
+  when: ansible_os_family == "Debian" and network_has_vlan
+  tags:
+    - network
+    - packages
+    - apt
+    - vlan
+
+- name: Enable 8021q at startup
+  lineinfile:
+    regexp: '^8021q'
+    line: "8021q"
+    dest: /etc/modules
+  when: ansible_os_family == "Debian" and network_has_vlan
+  tags:
+    - network
+    - module
+    - kernel
+    - vlan
+
+- name: Enable 8021q module
+  modprobe:
+    name: '8021q'
+    state: present
+  when: ansible_os_family == "Debian" and network_has_vlan
+  tags:
+    - network
+    - module
+    - kernel
+    - vlan
+
+- name: Configure lines in /etc/network/interfaces
+  blockinfile:
+    path: "/etc/network/interfaces.d/{{ item.key.split('.')[0] }}"
+    marker: "# {mark} {{ item.key }} ANSIBLE MANAGED"
+    mode: '0644'
+    owner: root
+    group: root
+    create: yes
+    # backup: yes
+    block: |
+      auto {{ item.key }}
+      {% for proto in item.value %}
+      iface {{ item.key }} {{ proto.protocole }}
+      {% for conf in proto.config %}
+        {{ conf }}
+      {% endfor %}
+      {% if item.key.split('.')|length > 1 %}
+        vlan-raw-device {{ item.key.split('.')[0] }}
+      {% endif %}
+
+      {% endfor %}
+  with_dict: "{{ network_interfaces }}"
+  when: ansible_os_family == "Debian" and network_interfaces|length>0
+  tags:
+    - network
+    - vlan
+
+- name: Configure /etc/network/interfaces to include interfaces.d
+  lineinfile:
+    dest: /etc/network/interfaces
+    line: 'source /etc/network/interfaces.d/*'
+    regexp: '^source /etc/network/interfaces.d/*'
+  when: ansible_os_family == "Debian" and network_interfaces|length>0
+  tags:
+    - network
+    - vlan
+# vim:ft=ansible:

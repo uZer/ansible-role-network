@@ -1,0 +1,4 @@
+---
+network_has_vlan: no
+network_interfaces: {}
+# vim:ft=ansible:
