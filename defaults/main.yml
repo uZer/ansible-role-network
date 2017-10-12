@@ -1,4 +1,5 @@
 ---
+network_disable_ipv6_interfaces: []
 network_has_vlan: no
 network_interfaces: {}
 # vim:ft=ansible:

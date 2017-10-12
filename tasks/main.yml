@@ -33,15 +33,24 @@
     - kernel
     - vlan
 
+- name: Disable ipv6 if needed
+  sysctl:
+    name: "net.ipv6.conf.{{ item }}.disable_ipv6"
+    value: 1
+    state: present
+  with_items: "{{ network_disable_ipv6_interfaces }}"
+  tags:
+    - network
+    - vlan
+    - ipv6
+    - sysctl
+
 - name: Configure lines in /etc/network/interfaces
   blockinfile:
     path: "/etc/network/interfaces.d/{{ item.key.split('.')[0] }}"
     marker: "# {mark} {{ item.key }} ANSIBLE MANAGED"
-    mode: '0644'
-    owner: root
-    group: root
     create: yes
-    # backup: yes
+    backup: yes
     block: |
       auto {{ item.key }}
       {% for proto in item.value %}
